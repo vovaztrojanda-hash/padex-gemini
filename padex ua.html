@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Padex Browser</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --accent-color: #00bcd4;
+            --bar-bg: rgba(20, 20, 20, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --panel-bg: rgba(0, 0, 0, 0.65);
+            --bxanti-color: #10b981;
+            --bxanti-warn: #ff3333;
+            --text-color: white; 
+            --input-text-color: white;
+        }
+
+        body {
+            background: linear-gradient(135deg, #7da0b5, #9cb7c9, #b5cbd8);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: var(--text-color);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Upper control panel */
+        .top-bar {
+            background: var(--bar-bg);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+        }
+
+        /* Brand */
+        .brand {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .brand img {
+            width: 35px;
+            height: 35px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 6px var(--accent-color));
+            transition: transform 0.3s;
+        }
+
+        .brand:hover img {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Address bar */
+        .address-bar {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--input-text-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+
+        .address-bar:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--accent-color);
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 10px;
+            position: relative;
+        }
+
+        /* VPN */
+        .vpn-container {
+            position: relative;
+        }
+
+        .vpn-btn {
+            background: #ff5722;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 0 10px rgba(255, 87, 34, 0.4);
+            white-space: nowrap;
+        }
+
+        .vpn-btn.active {
+            background: #4caf50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+        }
+
+        /* VPN Dropdown */
+        .vpn-dropdown {
+            display: none;
+            position: absolute;
+            top: 45px;
+            right: 0;
+            background: rgba(25, 25, 25, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            width: 160px;
+            overflow: hidden;
+            z-index: 20;
+            flex-direction: column;
+        }
+
+        .vpn-dropdown.active {
+            display: flex;
+        }
+
+        .vpn-option {
+            background: transparent;
+            color: var(--text-color);
+            border: none;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vpn-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .vpn-option.disconnect {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ff5722;
+        }
+
+        .vpn-option.disconnect:hover {
+            background: rgba(255, 87, 34, 0.15);
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .settings-btn:hover {
+            transform: rotate(30deg);
+        }
+
+        .browser-content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Bookmarks Grid */
+        .bookmarks-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 160px);
+            gap: 20px;
+            background: var(--panel-bg);
+            padding: 35px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            z-index: 2;
+        }
+
+        .bookmark-card {
+            background: var(--card-bg);
+            padding: 20px 15px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 600;
+            transition: 0.3s;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .bookmark-card:hover {
+            background: rgba(0, 188, 212, 0.2);
+            border-color: var(--accent-color);
+            transform: translateY(-5px);
+        }
+
+        .bookmark-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            color: white; 
+            overflow: hidden;
+        }
+
+        /* Style for logo icon */
+        .bookmark-icon img {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+        }
+
+        /* Modal Windows */
+        .modal-window {
+            display: none;
+            position: absolute;
+            background: rgba(25, 25, 25, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 20px;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 5;
+            flex-direction: column;
+            gap: 20px;
+            color: var(--text-color);
+        }
+
+        .modal-window.active {
+            display: flex;
+        }
+
+        /* Special Window for Mail */
+        .modal-window.mail-window {
+            width: 650px;
+            height: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 10px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #aaa;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: var(--text-color); }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .setting-item select, .setting-item input {
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Light Theme */
+        .light-theme-elements select, .light-theme-elements input {
+            background: #fff !important;
+            color: #222 !important;
+            border: 1px solid #ccc !important;
+        }
+
+        /* BXanti Defender */
+        .bxanti-btn {
+            background-color: var(--bxanti-color);
+            color: #000;
+            border: none;
+            padding: 10px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .bxanti-btn:hover {
+            opacity: 0.9;
+        }
+
+        .scan-progress-container {
+            display: none;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .scan-progress-bar {
+            background-color: var(--bxanti-color);
+            width: 0%;
+            height: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .scan-progress-bar.warning-bar {
+            background-color: var(--bxanti-warn) !important;
+        }
+
+        .scan-status {
+            font-size: 13px;
+            margin-top: 5px;
+            font-style: italic;
+            display: none;
+            color: #a3a3a3;
+        }
+
+        /* Account & History */
+        .history-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .light-theme-elements .history-container {
+            background: rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .light-theme-elements .history-item {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .delete-hist-btn {
+            background: transparent;
+            border: none;
+            color: var(--bxanti-warn);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .delete-hist-btn:hover {
+            text-decoration: underline;
+        }
+
+        /* Mail Client */
+        .mail-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .mail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 5px;
+        }
+
+        .mail-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mail-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+        }
+
+        .light-theme-elements .mail-item {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .light-theme-elements .mail-item:hover {
+            background: rgba(0, 0, 0, 0.06);
+        }
+
+        .mail-sender {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--accent-color);
+        }
+
+        .mail-subject {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .mail-time {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
+        .mail-view {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+        }
+
+        .mail-view-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .light-theme-elements .mail-view-header {
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .mail-view-body {
+            font-size: 13.5px;
+            line-height: 1.6;
+            background: rgba(0,0,0,0.25);
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .light-theme-elements .mail-view-body {
+            background: rgba(0,0,0,0.03);
+        }
+
+        /* Toast notifications */
+        .toast-notification {
+            position: fixed;
+            bottom: -150px;
+            right: 20px;
+            background: rgba(30, 30, 30, 0.95);
+            border-left: 5px solid var(--accent-color);
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.6);
+            width: 320px;
+            padding: 15px;
+            z-index: 100;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toast-notification.active {
+            bottom: 20px;
+        }
+
+        .light-theme-elements .toast-notification {
+            background: rgba(255, 255, 255, 0.98);
+            color: #222;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-left: 5px solid var(--accent-color);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .toast-icon {
+            font-size: 28px;
+        }
+
+        .toast-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .toast-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .toast-sender {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
+        .toast-body {
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        /* Admin Online Panel Styling */
+        .admin-online-box {
+            display: none;
+            background: rgba(76, 175, 80, 0.15);
+            border: 1px dashed rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #4caf50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.1);
+            margin-bottom: 5px;
+        }
+
+        .admin-online-box strong {
+            font-size: 16px;
+            text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Control Bar -->
+    <div class="top-bar">
+        <div class="brand">
+            <img src="padex_logo.png" alt="Padex Logo">
+            <span>Padex</span>
+        </div>
+        <input type="text" class="address-bar" id="url-input" placeholder="Введіть запит або адресу сайту..." onkeydown="handleSearch(event)">
+        <div class="controls-group">
+            <!-- VPN -->
+            <div class="vpn-container">
+                <button class="vpn-btn" id="vpn-toggle" onclick="toggleVpnDropdown()">VPN: ВИМК</button>
+                <div class="vpn-dropdown" id="vpn-dropdown">
+                    <button class="vpn-option" onclick="connectVPN('USA', '🇺🇸 USA')">🇺🇸 Америка</button>
+                    <button class="vpn-option" onclick="connectVPN('UKR', '🇺🇦 UKR')">🇺🇦 Україна</button>
+                    <button class="vpn-option" onclick="connectVPN('RUS', '🇷🇺 RUS')">🇷🇺 Росія</button>
+                    <button class="vpn-option disconnect" onclick="disconnectVPN()">❌ Вимкнути</button>
+                </div>
+            </div>
+            <!-- BXanti Antivirus -->
+            <button class="control-btn" onclick="toggleBXanti()" title="Антивірус BXanti">🛡️</button>
+            <!-- Account Button -->
+            <button class="control-btn" onclick="toggleAccount()" id="acc-btn-icon" title="Акаунт">👤</button>
+            <!-- Settings Button -->
+            <button class="control-btn settings-btn" onclick="toggleSettings()">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="browser-content">
+        <div class="bookmarks-grid">
+            <!-- Вбудована пошта Padex Mail -->
+            <div onclick="toggleMail()" class="bookmark-card">
+                <div class="bookmark-icon" style="background: rgba(0, 188, 212, 0.2); border: 1px solid var(--accent-color);">
+                    <img src="padex_logo.png" alt="Padex Mail">
+                </div> 
+                <span id="lbl-mail">Padex Пошта</span>
+            </div>
+            <!-- Офіційна пошта Google (Gmail) -->
+            <a href="https://mail.google.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #ea4335;">M</div>
+                <span>Gmail</span>
+            </a>
+            <a href="https://www.youtube.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #ff0000;">Y</div> YouTube
+            </a>
+            <a href="https://music.youtube.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: linear-gradient(45deg, #ff0000, #232323);">🎵</div> YT Music
+            </a>
+            <a href="https://www.google.com/maps" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #4caf50;">📍</div> <span id="lbl-maps">Google Карти</span>
+            </a>
+            <a href="https://gemini.google.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: linear-gradient(45deg, #1a73e8, #7460ee);">✨</div> Gemini AI
+            </a>
+            <a href="https://adderly.top/" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #9c27b0;">🌐</div> Adderly
+            </a>
+            <a href="https://itch.io/" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #fa5c5c;">🎮</div> Itch.io
+            </a>
+            <a href="https://store.steampowered.com/" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #171a21;">♨️</div> Steam
+            </a>
+            <a href="https://github.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #24292e;">🐙</div> GitHub
+            </a>
+            <a href="https://discord.com" target="_blank" class="bookmark-card">
+                <div class="bookmark-icon" style="background: #5865F2;">💬</div> Discord
+            </a>
+        </div>
+
+        <!-- Padex Mail Modal -->
+        <div class="modal-window mail-window" id="mail-modal">
+            <div class="modal-header">
+                <h3 id="mail-title" style="display: flex; align-items: center; gap: 8px; color: var(--accent-color);">📩 Padex Mail</h3>
+                <button class="close-btn" onclick="toggleMail()">×</button>
+            </div>
+            
+            <div class="mail-layout" id="mail-layout-list">
+                <div class="mail-list" id="mail-items-container">
+                    <!-- Emails render dynamically -->
+                </div>
+            </div>
+
+            <div class="mail-view" id="mail-view-single">
+                <button class="bxanti-btn" style="align-self: flex-start; background: #555; color: white;" onclick="backToMailList()">← Назад</button>
+                <div class="mail-view-header">
+                    <h4 id="mail-view-subject" style="font-size: 16px;">Тема листа</h4>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-top: 5px; opacity: 0.8;">
+                        <span id="mail-view-sender">Від кого: ...</span>
+                        <span id="mail-view-time">Час</span>
+                    </div>
+                </div>
+                <div class="mail-view-body" id="mail-view-body">
+                    Текст листа...
+                </div>
+            </div>
+        </div>
+
+        <!-- BXanti Antivirus Modal -->
+        <div class="modal-window" id="bxanti-modal">
+            <div class="modal-header">
+                <h3 id="bx-title" style="color: var(--bxanti-color); display: flex; align-items: center; gap: 8px;">🛡️ BXanti Захисник</h3>
+                <button class="close-btn" onclick="toggleBXanti()">×</button>
+            </div>
+            <div class="setting-item">
+                <label id="bx-lbl">Сканувати адресу сайту:</label>
+                <input type="text" id="scanInput" placeholder="google.com" autocomplete="off">
+                <button class="bxanti-btn" onclick="startScan()">Почати сканування</button>
+            </div>
+            <div class="scan-progress-container" id="progressBarContainer">
+                <div class="scan-progress-bar" id="progressBar"></div>
+            </div>
+            <div class="scan-status" id="scanStatus">Антивірус готовий до роботи.</div>
+        </div>
+
+        <!-- Account Modal -->
+        <div class="modal-window" id="account-modal">
+            <div class="modal-header">
+                <h3 id="acc-title">Google Акаунт</h3>
+                <button class="close-btn" onclick="toggleAccount()">×</button>
+            </div>
+            
+            <!-- Step 1: Logged Out -->
+            <div id="acc-logged-out" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="setting-item">
+                    <label id="acc-email-lbl">Електронна пошта:</label>
+                    <input type="email" id="acc-email" placeholder="username@gmail.com">
+                </div>
+                <button class="bxanti-btn" onclick="loginAccount()" id="acc-btn-login">Увійти</button>
+            </div>
+
+            <!-- Step 1.5: Verify Code -->
+            <div id="acc-verify" style="display: none; flex-direction: column; gap: 15px;">
+                <p style="font-size: 13px; opacity: 0.8; line-height: 1.4;" id="acc-verify-text">Ми надіслали код на вашу пошту. Введіть його для підтвердження входу:</p>
+                <div class="setting-item">
+                    <label id="acc-code-lbl" style="font-weight: bold;">Код підтвердження:</label>
+                    <input type="text" id="acc-verify-code" placeholder="123456" maxlength="6" style="text-align: center; font-size: 20px; letter-spacing: 5px; font-weight: bold;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="bxanti-btn" style="flex: 1;" onclick="confirmVerificationCode()" id="acc-btn-confirm">Підтвердити</button>
+                    <button class="bxanti-btn" style="background: #555; color: white; flex: 1;" onclick="cancelVerification()" id="acc-btn-cancel">Скасувати</button>
+                </div>
+            </div>
+
+            <!-- NEW Step 1.75: Admin Rights Password Verification -->
+            <div id="acc-admin-verify" style="display: none; flex-direction: column; gap: 15px;">
+                <p style="font-size: 13px; opacity: 0.8; line-height: 1.4; color: #4caf50;">👑 Виявлено акаунт адміністратора. Будь ласка, підтвердіть свої права доступу:</p>
+                <div class="setting-item">
+                    <label style="font-weight: bold; color: #4caf50;">Пароль підтвердження прав:</label>
+                    <input type="password" id="acc-admin-pass" placeholder="•••••••" style="text-align: center; font-size: 20px; letter-spacing: 5px; font-weight: bold;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="bxanti-btn" style="flex: 1; background: #4caf50; color: white;" onclick="confirmAdminPassword()">Підтвердити</button>
+                    <button class="bxanti-btn" style="background: #555; color: white; flex: 1;" onclick="cancelVerification()">Скасувати</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Logged In -->
+            <div id="acc-logged-in" style="display: none; flex-direction: column; gap: 15px;">
+                <div>
+                    <p style="font-size: 14px; opacity: 0.8;" id="acc-welcome">Ви увійшли як:</p>
+                    <strong id="user-email-display" style="font-size: 16px; color: var(--accent-color); word-break: break-all;"></strong>
+                </div>
+
+                <!-- ADMIN ONLINE COUNTER (Shows only for your email) -->
+                <div class="admin-online-box" id="admin-online-counter">
+                    🟢 Онлайн користувачів Padex: <strong id="online-count-val">0</strong>
+                </div>
+                
+                <div class="setting-item">
+                    <label id="acc-history-lbl" style="font-weight: bold; display: flex; justify-content: space-between;">
+                        <span>Історія пошуку:</span>
+                    </label>
+                    <div class="history-container" id="history-list"></div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="bxanti-btn" style="background: #ff5722; color: white; flex: 1;" onclick="clearAllHistory()" id="acc-btn-clear">Очистити</button>
+                    <button class="bxanti-btn" style="background: #555; color: white; flex: 1;" onclick="logoutAccount()" id="acc-btn-logout">Вийти</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal-window" id="settings-modal">
+            <div class="modal-header">
+                <h3 id="set-title">Налаштування Padex</h3>
+                <button class="close-btn" onclick="toggleSettings()">×</button>
+            </div>
+            
+            <div class="setting-item">
+                <label id="set-lang-lbl">Мова інтерфейсу:</label>
+                <select id="lang-select" onchange="changeLanguage()">
+                    <option value="uk" selected>Українська</option>
+                    <option value="ru">Русский</option>
+                    <option value="en">English (US)</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <label id="set-search-lbl">Пошукова система:</label>
+                <select id="search-engine" onchange="changeSearchEngine()">
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <label id="set-theme-lbl">Колірна схема:</label>
+                <select id="theme-select" onchange="changeTheme()">
+                    <option value="default" id="opt-theme-def">Стандартний Padex</option>
+                    <option value="light" id="opt-theme-light">Світлі панелі</option>
+                    <option value="cyber" id="opt-theme-cyber">Кіберпанк Неон</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Toast notification -->
+    <div class="toast-notification" id="email-toast">
+        <div class="toast-icon">📩</div>
+        <div class="toast-content">
+            <div class="toast-title" id="toast-title-text">Новий лист</div>
+            <div class="toast-sender" id="toast-sender-text">Padex Security (no-reply)</div>
+            <div class="toast-body" id="toast-body-text">Ваш код підтвердження: <strong id="toast-code-val" style="color: var(--accent-color); font-size: 15px;">123456</strong></div>
+        </div>
+    </div>
+
+    <script>
+        const urlInput = document.getElementById('url-input');
+        const vpnBtn = document.getElementById('vpn-toggle');
+        const vpnDropdown = document.getElementById('vpn-dropdown');
+        const settingsModal = document.getElementById('settings-modal');
+        const bxantiModal = document.getElementById('bxanti-modal');
+        const accountModal = document.getElementById('account-modal');
+        const mailModal = document.getElementById('mail-modal');
+        const searchEngineSelect = document.getElementById('search-engine');
+        const langSelect = document.getElementById('lang-select');
+        const themeSelect = document.getElementById('theme-select');
+        
+        let currentVpnCountry = null;
+        let currentUser = null; 
+
+        let generatedCode = null;
+        let tempEmail = null;
+        let onlineIntervalId = null; // Для таймера онлайну
+
+        let emailInbox = [
+            {
+                id: 1,
+                sender: "Padex Team",
+                subject: "Ласкаво просимо до Padex Browser!",
+                time: "Вчора",
+                body: "Привіт, друже!\n\nДякуємо, що вибрав саме наш браузер Padex як свого щоденного провідника в інтернет-світі. Ми надзвичайно раді бачити тебе серед нашої спільноти розробників та ентузіастів!\n\nГоловна мета нашого проекту — надати тобі максимальний рівень свободи та захисту під час веб-серфінгу. Саме тому ми інтегрували в браузер надійні локальні утиліти, які не вимагають зайвих налаштувань.\n\nЗалишайся з нами, попереду ще багато крутих оновлень коду!\n\nЗ повагою,\nКоманда розробників Padex"
+            },
+            {
+                id: 2,
+                sender: "GitHub notifications",
+                subject: "Успішне оновлення репозиторію",
+                time: "Сьогодні",
+                body: "Вітаємо!\n\nТвій проект «Padex Browser» успешно синхронізовано з хмарою GitHub. Усі локальні зміни завантажено до гілки main без конфліктів злиття.\n\nДеталі останнього комміту:\n- Оновлено логіку системи локальної пошти Padex Mail\n- Додано покращену візуалізацію списку листів у вікні перегляду\n- Виправлено баг із фокусуванням інпутів у світлій темі\n\nПродовжуй писати чистий код та реалізовувати нові класні фічі!\n\nЗ повагою,\nРобот-асистент GitHub"
+            },
+            {
+                id: 3,
+                sender: "Padex Lead Developer",
+                subject: "Історія розробки Padex та плани",
+                time: "Сьогодні",
+                body: "Привіт, капітане!\n\nПросто хотів нагадати, як швидко росте наш проект. Пам'ятаєш, як усе починалося з базової сторінки з парою посилань на Steam та Itch? А вже сьогодні ми маємо вбудовані теми оформлення (від світлої до стильного кіберпанку!), власну симуляцію VPN-серверів і навіть свій локальний поштовий клієнт!\n\nНайближчим часом я планую доопрацювати та розширити функціонал BXanti, щоб сканування було ще детальнішим. Також є ідея додати кілька нових міні-ігор на головну сторінку закладок.\n\nЯкщо у тебе є ідеї, які ще фічі можна додати в код — обов'язково записуй їх у списки завдань.\n\nУспіхів у кодингу!\nТвій внутрішній розробник"
+            },
+            {
+                id: 4,
+                sender: "BXanti Security",
+                subject: "Звіт про сканування та захист",
+                time: "Сьогодні",
+                body: "Шановний користувачу!\n\nСистема безпеки BXanti завершила щоденний аналіз активності твого веб-браузера.\n\nОсь детальний звіт безпеки:\n1. Активний захист: Увімкнено та працює у штатному режимі.\n2. Перевірка доменів: Усі завантажені ресурси перевірені. Спроби переходу на підозрілі сайти успішно заблоковано хмарним фільтром.\n3. Моніторинг загрози .RU: Будь-які запити на ресурси в цій доменній зоні автоматично блокуються на випередження для уникнення витоку даних.\n\nБудь обережним при переході за невідомими посиланнями та завжди перевіряй підозрілі адреси через панель BXanti у верхній частині екрана.\n\nТвоя безпека — наш пріоритет,\nШІ-захисник BXanti"
+            }
+        ];
+
+        const translations = {
+            uk: {
+                placeholder: "Введіть запит або адресу сайту...",
+                vpnOff: "VPN: ВИМК",
+                settingsTitle: "Налаштування Padex",
+                langLbl: "Мова інтерфейсу:",
+                searchLbl: "Пошукова система:",
+                themeLbl: "Колірна схема:",
+                themeDef: "Стандартний Padex",
+                themeLight: "Світлі панелі",
+                themeCyber: "Кіберпанк Неон",
+                mail: "Padex Пошта",
+                maps: "Google Карти",
+                bxTitle: "🛡️ BXanti Захисник",
+                bxLbl: "Сканувати адресу сайту:",
+                bxBtn: "Почати сканування",
+                bxStatusInit: "Антивірус готовий до роботи.",
+                bxStatus1: "Підключення до хмари BXanti...",
+                bxStatus2: "Аналіз коду сайту ",
+                bxStatus3: "Пошук шкідливих скриптів...",
+                bxStatus4: "Перевірка завершена!",
+                bxStatusSafe: " абсолютно безпечний!",
+                bxError: "Будь ласка, введіть коректну адресу сайту (наприклад, google.com)!",
+                bxRuWarning: " виявлено загрозу! Домени .ru потенційно небезпечні та заблоковані для вашої безпеки.",
+                
+                accTitle: "Google Акаунт",
+                accEmailLbl: "Електронна пошта:",
+                accBtnLogin: "Увійти",
+                accWelcome: "Ви увійшли як:",
+                accHistLbl: "Історія пошуку:",
+                accBtnClear: "Очистити",
+                accBtnLogout: "Вийти",
+                accEmptyHistory: "Історія пошуку порожня",
+                accAlertLogin: "Будь ласка, введіть електронну пошту!",
+                
+                accVerifyText: "Ми надіслали секретний код на вашу пошту. Введіть його для входу:",
+                accCodeLbl: "Код підтвердження:",
+                accBtnConfirm: "Підтвердити",
+                accBtnCancel: "Скасувати",
+                toastTitle: "Новий лист",
+                toastSender: "Padex Security (no-reply)",
+                toastBody: "Ваш код для входу в акаунт: ",
+                accAlertWrongCode: "Неправильний код! Спробуйте ще раз.",
+
+                mailTitle: "📩 Padex Mail",
+                mailEmpty: "Скринька порожня",
+                mailFrom: "Від кого: ",
+                mailNoSubj: "Без теми"
+            },
+            ru: {
+                placeholder: "Введите запрос или адрес сайта...",
+                vpnOff: "VPN: ВЫКЛ",
+                settingsTitle: "Настройки Padex",
+                langLbl: "Язык интерфейса:",
+                searchLbl: "Поисковая система:",
+                themeLbl: "Цветовая схема:",
+                themeDef: "Стандартный Padex",
+                themeLight: "Светлые панели",
+                themeCyber: "Киберпанк Неон",
+                mail: "Padex Почта",
+                maps: "Google Карты",
+                bxTitle: "🛡️ BXanti Защитник",
+                bxLbl: "Сканировать адрес сайта:",
+                bxBtn: "Начать сканирование",
+                bxStatusInit: "Антивирус готов к работе.",
+                bxStatus1: "Подключение к облаку BXanti...",
+                bxStatus2: "Анализ кода сайта ",
+                bxStatus3: "Поиск вредоносных скриптов...",
+                bxStatus4: "Проверка завершена!",
+                bxStatusSafe: " абсолютно безопасен!",
+                bxError: "Пожалуйста, введите корректный адрес сайта (например, google.com)!",
+                bxRuWarning: " обнаружена угроза! .ru домены потенциально опасны и заблокированы для вашей безопасности.",
+                
+                accTitle: "Google Аккаунт",
+                accEmailLbl: "Электронная почта:",
+                accBtnLogin: "Войти",
+                accWelcome: "Вы вошли как:",
+                accHistLbl: "История поиска:",
+                accBtnClear: "Очистить",
+                accBtnLogout: "Выйти",
+                accEmptyHistory: "История поиска пуста",
+                accAlertLogin: "Пожалуйста, введите электронную почту!",
+                
+                accVerifyText: "Мы отправили секретный код на вашу почту. Введите его для входа:",
+                accCodeLbl: "Координационный код:",
+                accBtnConfirm: "Подтвердить",
+                accBtnCancel: "Отмена",
+                toastTitle: "Новое письмо",
+                toastSender: "Padex Security (no-reply)",
+                toastBody: "Ваш код для входа в аккаунт: ",
+                accAlertWrongCode: "Неверный код! Попробуйте еще раз.",
+
+                mailTitle: "📩 Padex Mail",
+                mailEmpty: "Почтовый ящик пуст",
+                mailFrom: "От кого: ",
+                mailNoSubj: "Без темы"
+            },
+            en: {
+                placeholder: "Search or enter website address...",
+                vpnOff: "VPN: OFF",
+                settingsTitle: "Padex Settings",
+                langLbl: "Interface Language:",
+                searchLbl: "Search Engine:",
+                themeLbl: "Color Theme:",
+                themeDef: "Default Padex",
+                themeLight: "Light Panels",
+                themeCyber: "Cyberpunk Neon",
+                mail: "Padex Mail",
+                maps: "Google Maps",
+                bxTitle: "🛡️ BXanti Defender",
+                bxLbl: "Scan website address:",
+                bxBtn: "Start Scan",
+                bxStatusInit: "Antivirus is ready to go.",
+                bxStatus1: "Connecting to BXanti cloud...",
+                bxStatus2: "Analyzing site code ",
+                bxStatus3: "Scanning for malicious scripts...",
+                bxStatus4: "Scan completed!",
+                bxStatusSafe: " is completely safe!",
+                bxError: "Please enter a valid site address (e.g., google.com)!",
+                bxRuWarning: " threat detected! .ru domains are potentially dangerous and blocked for your safety.",
+                
+                accTitle: "Google Account",
+                accEmailLbl: "Email Address:",
+                accBtnLogin: "Sign In",
+                accWelcome: "Logged in as:",
+                accHistLbl: "Search History:",
+                accBtnClear: "Clear",
+                accBtnLogout: "Log Out",
+                accEmptyHistory: "Search history is empty",
+                accAlertLogin: "Please enter an email address!",
+
+                accVerifyText: "We sent a secret code to your email. Enter it to log in:",
+                accCodeLbl: "Verification Code:",
+                accBtnConfirm: "Confirm",
+                accBtnCancel: "Cancel",
+                toastTitle: "New Email",
+                toastSender: "Padex Security (no-reply)",
+                toastBody: "Your account login code: ",
+                accAlertWrongCode: "Incorrect code! Please try again.",
+
+                mailTitle: "📩 Padex Mail",
+                mailEmpty: "Inbox is empty",
+                mailFrom: "From: ",
+                mailNoSubj: "No Subject"
+            }
+        };
+
+        // INITIAL SETTINGS
+        function initSettings() {
+            const defaultLang = "uk";
+            const defaultSearch = "google";
+            const defaultTheme = "default";
+
+            const savedLang = localStorage.getItem("padex_lang") || defaultLang;
+            const savedSearch = localStorage.getItem("padex_search") || defaultSearch;
+            const savedTheme = localStorage.getItem("padex_theme") || defaultTheme;
+            
+            currentUser = localStorage.getItem("padex_user") || null;
+
+            langSelect.value = savedLang;
+            searchEngineSelect.value = savedSearch;
+            themeSelect.value = savedTheme;
+
+            changeLanguage(false); 
+            changeTheme(false);
+            
+            updateAccountUI();
+            renderMailList();
+        }
+
+        function toggleSettings() {
+            settingsModal.classList.toggle('active');
+            vpnDropdown.classList.remove('active');
+            bxantiModal.classList.remove('active');
+            accountModal.classList.remove('active');
+            mailModal.classList.remove('active');
+        }
+
+        function toggleVpnDropdown() {
+            vpnDropdown.classList.toggle('active');
+            settingsModal.classList.remove('active');
+            bxantiModal.classList.remove('active');
+            accountModal.classList.remove('active');
+            mailModal.classList.remove('active');
+        }
+
+        function toggleBXanti() {
+            bxantiModal.classList.toggle('active');
+            settingsModal.classList.remove('active');
+            vpnDropdown.classList.remove('active');
+            accountModal.classList.remove('active');
+            mailModal.classList.remove('active');
+            
+            const progressBar = document.getElementById('progressBar');
+            progressBar.classList.remove('warning-bar');
+            document.getElementById('progressBarContainer').style.display = 'none';
+            document.getElementById('scanStatus').style.display = 'block';
+            
+            const theme = themeSelect.value;
+            if (theme === 'light') {
+                document.getElementById('scanStatus').style.color = '#555';
+            } else {
+                document.getElementById('scanStatus').style.color = '#a3a3a3';
+            }
+            
+            document.getElementById('scanStatus').innerText = translations[langSelect.value].bxStatusInit;
+        }
+
+        function toggleAccount() {
+            accountModal.classList.toggle('active');
+            settingsModal.classList.remove('active');
+            vpnDropdown.classList.remove('active');
+            bxantiModal.classList.remove('active');
+            mailModal.classList.remove('active');
+            if (accountModal.classList.contains('active')) {
+                renderHistory();
+            }
+        }
+
+        function toggleMail() {
+            mailModal.classList.toggle('active');
+            settingsModal.classList.remove('active');
+            vpnDropdown.classList.remove('active');
+            bxantiModal.classList.remove('active');
+            accountModal.classList.remove('active');
+            if (mailModal.classList.contains('active')) {
+                backToMailList();
+                renderMailList();
+            }
+        }
+
+        function connectVPN(countryCode, buttonText) {
+            currentVpnCountry = countryCode;
+            vpnBtn.innerText = "VPN: " + buttonText;
+            vpnBtn.classList.add('active');
+            vpnDropdown.classList.remove('active');
+        }
+
+        function disconnectVPN() {
+            currentVpnCountry = null;
+            const lang = langSelect.value;
+            vpnBtn.innerText = translations[lang].vpnOff;
+            vpnBtn.classList.remove('active');
+            vpnDropdown.classList.remove('active');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.vpn-btn')) {
+                if (vpnDropdown.classList.contains('active')) {
+                    vpnDropdown.classList.remove('active');
+                }
+            }
+        }
+
+        function changeLanguage(save = true) {
+            const lang = langSelect.value;
+            
+            if (save) {
+                localStorage.setItem("padex_lang", lang);
+            }
+            
+            const t = translations[lang];
+
+            urlInput.placeholder = t.placeholder;
+            if (!currentVpnCountry) {
+                vpnBtn.innerText = t.vpnOff;
+            }
+            
+            document.getElementById('set-title').innerText = t.settingsTitle;
+            document.getElementById('set-lang-lbl').innerText = t.langLbl;
+            document.getElementById('set-search-lbl').innerText = t.searchLbl;
+            document.getElementById('set-theme-lbl').innerText = t.themeLbl;
+            document.getElementById('opt-theme-def').innerText = t.themeDef;
+            document.getElementById('opt-theme-light').innerText = t.themeLight;
+            document.getElementById('opt-theme-cyber').innerText = t.themeCyber;
+            
+            document.getElementById('lbl-mail').innerText = t.mail;
+            document.getElementById('lbl-maps').innerText = t.maps;
+
+            document.getElementById('bx-title').innerHTML = t.bxTitle;
+            document.getElementById('bx-lbl').innerText = t.bxLbl;
+            document.querySelector('.bxanti-btn').innerText = t.bxBtn;
+            document.getElementById('scanStatus').innerText = t.bxStatusInit;
+
+            document.getElementById('acc-title').innerText = t.accTitle;
+            document.getElementById('acc-email-lbl').innerText = t.accEmailLbl;
+            document.getElementById('acc-btn-login').innerText = t.accBtnLogin;
+            document.getElementById('acc-welcome').innerText = t.accWelcome;
+            document.getElementById('acc-history-lbl').firstElementChild.innerText = t.accHistLbl;
+            document.getElementById('acc-btn-clear').innerText = t.accBtnClear;
+            document.getElementById('acc-btn-logout').innerText = t.accBtnLogout;
+            
+            document.getElementById('acc-verify-text').innerText = t.accVerifyText;
+            document.getElementById('acc-code-lbl').innerText = t.accCodeLbl;
+            document.getElementById('acc-btn-confirm').innerText = t.accBtnConfirm;
+            document.getElementById('acc-btn-cancel').innerText = t.accBtnCancel;
+
+            document.getElementById('mail-title').innerText = t.mailTitle;
+
+            renderHistory();
+            renderMailList();
+        }
+
+        function changeSearchEngine() {
+            const searchEngine = searchEngineSelect.value;
+            localStorage.setItem("padex_search", searchEngine);
+        }
+
+        function changeTheme(save = true) {
+            const theme = themeSelect.value;
+            
+            if (save) {
+                localStorage.setItem("padex_theme", theme);
+            }
+            
+            const body = document.body;
+            const dropdownOptions = document.querySelectorAll('.vpn-option');
+            
+            if (theme === 'light') {
+                document.documentElement.style.setProperty('--accent-color', '#009688');
+                document.documentElement.style.setProperty('--bar-bg', 'rgba(240, 240, 240, 0.85)');
+                document.documentElement.style.setProperty('--panel-bg', 'rgba(255, 255, 255, 0.85)');
+                document.documentElement.style.setProperty('--card-bg', 'rgba(0, 0, 0, 0.05)');
+                document.documentElement.style.setProperty('--text-color', '#222'); 
+                document.documentElement.style.setProperty('--input-text-color', '#222'); 
+                
+                body.style.background = 'linear-gradient(135deg, #e0e0e0, #f5f5f5)';
+                body.classList.add('light-theme-elements');
+                
+                const modals = document.querySelectorAll('.modal-window');
+                modals.forEach(modal => {
+                    modal.style.background = 'rgba(255, 255, 255, 0.95)';
+                    modal.style.borderColor = 'rgba(0,0,0,0.15)';
+                    modal.style.color = '#222';
+                });
+
+                vpnDropdown.style.background = 'rgba(255, 255, 255, 0.95)';
+                vpnDropdown.style.borderColor = 'rgba(0,0,0,0.15)';
+                dropdownOptions.forEach(opt => {
+                    opt.style.color = '#222';
+                });
+
+                if (!document.getElementById('progressBar').classList.contains('warning-bar')) {
+                    document.getElementById('scanStatus').style.color = '#555';
+                }
+            } else if (theme === 'cyber') {
+                document.documentElement.style.setProperty('--accent-color', '#ff007f');
+                document.documentElement.style.setProperty('--bar-bg', 'rgba(15, 0, 30, 0.85)');
+                document.documentElement.style.setProperty('--panel-bg', 'rgba(30, 0, 60, 0.7)');
+                document.documentElement.style.setProperty('--card-bg', 'rgba(255, 0, 127, 0.1)');
+                document.documentElement.style.setProperty('--text-color', 'white');
+                document.documentElement.style.setProperty('--input-text-color', 'white');
+                
+                body.style.background = 'linear-gradient(135deg, #0f001e, #1e003c)';
+                body.classList.remove('light-theme-elements');
+                
+                const modals = document.querySelectorAll('.modal-window');
+                modals.forEach(modal => {
+                    modal.style.background = 'rgba(25, 25, 25, 0.9)';
+                    modal.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    modal.style.color = 'white';
+                });
+
+                vpnDropdown.style.background = 'rgba(25, 25, 25, 0.95)';
+                vpnDropdown.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                dropdownOptions.forEach(opt => {
+                    opt.style.color = 'white';
+                });
+
+                if (!document.getElementById('progressBar').classList.contains('warning-bar')) {
+                    document.getElementById('scanStatus').style.color = '#a3a3a3';
+                }
+            } else {
+                document.documentElement.style.setProperty('--accent-color', '#00bcd4');
+                document.documentElement.style.setProperty('--bar-bg', 'rgba(20, 20, 20, 0.75)');
+                document.documentElement.style.setProperty('--panel-bg', 'rgba(0, 0, 0, 0.65)');
+                document.documentElement.style.setProperty('--card-bg', 'rgba(255, 255, 255, 0.08)');
+                document.documentElement.style.setProperty('--text-color', 'white');
+                document.documentElement.style.setProperty('--input-text-color', 'white');
+                
+                body.style.background = 'linear-gradient(135deg, #7da0b5, #9cb7c9, #b5cbd8)';
+                body.classList.remove('light-theme-elements');
+                
+                const modals = document.querySelectorAll('.modal-window');
+                modals.forEach(modal => {
+                    modal.style.background = 'rgba(25, 25, 25, 0.9)';
+                    modal.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                    modal.style.color = 'white';
+                });
+
+                vpnDropdown.style.background = 'rgba(25, 25, 25, 0.95)';
+                vpnDropdown.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                dropdownOptions.forEach(opt => {
+                    opt.style.color = 'white';
+                });
+
+                if (!document.getElementById('progressBar').classList.contains('warning-bar')) {
+                    document.getElementById('scanStatus').style.color = '#a3a3a3';
+                }
+            }
+        }
+
+        // MAIL LIST RENDER
+        function renderMailList() {
+            const container = document.getElementById('mail-items-container');
+            const t = translations[langSelect.value];
+            
+            if (emailInbox.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #888; font-style: italic; padding: 20px;">${t.mailEmpty}</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            [...emailInbox].reverse().forEach(mail => {
+                const item = document.createElement('div');
+                item.className = 'mail-item';
+                item.onclick = () => viewMail(mail.id);
+                item.innerHTML = `
+                    <div style="display: flex; flex-direction: column; gap: 3px; max-width: 80%;">
+                        <span class="mail-sender">${mail.sender}</span>
+                        <span class="mail-subject">${mail.subject || t.mailNoSubj}</span>
+                    </div>
+                    <span class="mail-time">${mail.time}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function viewMail(id) {
+            const mail = emailInbox.find(m => m.id === id);
+            if (!mail) return;
+
+            const t = translations[langSelect.value];
+
+            document.getElementById('mail-layout-list').style.display = 'none';
+            document.getElementById('mail-view-single').style.display = 'flex';
+
+            document.getElementById('mail-view-subject').innerText = mail.subject;
+            document.getElementById('mail-view-sender').innerText = t.mailFrom + mail.sender;
+            document.getElementById('mail-view-time').innerText = mail.time;
+            document.getElementById('mail-view-body').textContent = mail.body; 
+        }
+
+        function backToMailList() {
+            document.getElementById('mail-view-single').style.display = 'none';
+            document.getElementById('mail-layout-list').style.display = 'flex';
+        }
+
+        // ACCOUNT LOGIN & VERIFICATION
+        function loginAccount() {
+            const email = document.getElementById('acc-email').value.trim();
+            const t = translations[langSelect.value];
+
+            if (!email) {
+                alert(t.accAlertLogin);
+                return;
+            }
+
+            tempEmail = email;
+            
+            const isAdmin = (email.toLowerCase() === "vovaztrojanda@gmail.com");
+
+            if (isAdmin) {
+                generatedCode = "777777";
+            } else {
+                generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+            }
+
+            document.getElementById('acc-logged-out').style.display = 'none';
+            document.getElementById('acc-verify').style.display = 'flex';
+            document.getElementById('acc-verify-code').value = '';
+
+            document.getElementById('acc-email').value = '';
+
+            const timeNow = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            if (isAdmin) {
+                emailInbox.push({
+                    id: Date.now(),
+                    sender: "Padex Security (Admin Team)",
+                    subject: "Вітаємо, Адміністраторе!",
+                    time: timeNow,
+                    body: "Добрий день, адмін!\n\nСистема безпеки Padex розпізнала твій логін у мережі.\n\nТвій персональний швидкий код адміністратора:\n👉 " + generatedCode + " 👈\n\nПриємного користування найновішими збірками Padex Browser!\n\nЗ повагою,\nСлужба безпеки Padex Accounts"
+                });
+            } else {
+                emailInbox.push({
+                    id: Date.now(),
+                    sender: "Padex Security",
+                    subject: "Код безпеки: " + generatedCode,
+                    time: timeNow,
+                    body: "Привіт!\n\nМи отримали запит на авторизацію в акаунті Padex Browser під твоєю адресою електронної пошти.\n\nТвій одноразовий код безпеки:\n👉 " + generatedCode + " 👈\n\nБудь ласка, введіть цей код у відповідне віконце браузера для підтвердження своєї особи.\n\nВажливо: Ніколи нікому не передавай цей код.\n\nЗ повагою,\nСлужба безпеки Padex Accounts"
+                });
+            }
+            
+            renderMailList();
+            showEmailToast(generatedCode, isAdmin);
+        }
+
+        function showEmailToast(code, isAdmin) {
+            const t = translations[langSelect.value];
+            const toast = document.getElementById('email-toast');
+            
+            document.getElementById('toast-title-text').innerText = isAdmin ? "🔐 Вхід Адміна" : t.toastTitle;
+            document.getElementById('toast-sender-text').innerText = isAdmin ? "Padex Control Center" : t.toastSender;
+            
+            if (isAdmin) {
+                document.getElementById('toast-body-text').innerHTML = "Добрий день, адмін! Твій супер-код: " + `<strong style="color: #4caf50; font-size: 16px;">${code}</strong>`;
+            } else {
+                document.getElementById('toast-body-text').innerHTML = t.toastBody + `<strong style="color: var(--accent-color); font-size: 16px;">${code}</strong>`;
+            }
+            
+            toast.classList.add('active');
+
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 8000);
+        }
+
+        function confirmVerificationCode() {
+            const inputCode = document.getElementById('acc-verify-code').value.trim();
+            const t = translations[langSelect.value];
+
+            if (inputCode === generatedCode) {
+                const isAdmin = (tempEmail.toLowerCase() === "vovaztrojanda@gmail.com");
+                
+                if (isAdmin) {
+                    // КРОК 1.75: Відображаємо екран підтвердження пароля адміна
+                    document.getElementById('acc-verify').style.display = 'none';
+                    document.getElementById('acc-admin-verify').style.display = 'flex';
+                    document.getElementById('acc-admin-pass').value = '';
+                } else {
+                    currentUser = tempEmail;
+                    localStorage.setItem("padex_user", currentUser);
+                    document.getElementById('email-toast').classList.remove('active');
+                    updateAccountUI();
+                    renderHistory();
+                }
+            } else {
+                alert(t.accAlertWrongCode);
+            }
+        }
+
+        // NEW: CONFIRM ADMIN PASSWORD
+        function confirmAdminPassword() {
+            const adminPassInput = document.getElementById('acc-admin-pass').value.trim();
+            
+            if (adminPassInput === "7680917") {
+                currentUser = tempEmail;
+                localStorage.setItem("padex_user", currentUser);
+                document.getElementById('email-toast').classList.remove('active');
+                updateAccountUI();
+                renderHistory();
+            } else {
+                alert("❌ Помилка: Неправильний пароль підтвердження прав адміністратора!");
+            }
+        }
+
+        function cancelVerification() {
+            generatedCode = null;
+            tempEmail = null;
+            
+            document.getElementById('acc-verify').style.display = 'none';
+            document.getElementById('acc-admin-verify').style.display = 'none';
+            document.getElementById('acc-logged-out').style.display = 'flex';
+            document.getElementById('email-toast').classList.remove('active');
+        }
+
+        // LOGOUT
+        function logoutAccount() {
+            currentUser = null;
+            localStorage.removeItem("padex_user");
+            stopOnlineCounter(); // Зупиняємо таймер
+            updateAccountUI();
+        }
+
+        function updateAccountUI() {
+            const loggedOutDiv = document.getElementById('acc-logged-out');
+            const verifyDiv = document.getElementById('acc-verify');
+            const adminVerifyDiv = document.getElementById('acc-admin-verify');
+            const loggedInDiv = document.getElementById('acc-logged-in');
+            const accBtnIcon = document.getElementById('acc-btn-icon');
+            const adminCounter = document.getElementById('admin-online-counter');
+
+            verifyDiv.style.display = 'none';
+            adminVerifyDiv.style.display = 'none';
+
+            if (currentUser) {
+                loggedOutDiv.style.display = 'none';
+                loggedInDiv.style.display = 'flex';
+                
+                const isAdmin = (currentUser.toLowerCase() === "vovaztrojanda@gmail.com");
+                
+                if (isAdmin) {
+                    document.getElementById('user-email-display').innerHTML = `<span style="color: #4caf50;">👑 [ADMIN]</span> ${currentUser}`;
+                    accBtnIcon.innerText = "👑"; 
+                    
+                    // Показуємо і запускаємо лічильник онлайну для адміна
+                    adminCounter.style.display = 'block';
+                    startOnlineCounter();
+                } else {
+                    document.getElementById('user-email-display').innerText = currentUser;
+                    accBtnIcon.innerText = "🟢"; 
+                    
+                    // Сховуємо лічильник для звичайних користувачів
+                    adminCounter.style.display = 'none';
+                    stopOnlineCounter();
+                }
+            } else {
+                loggedOutDiv.style.display = 'flex';
+                loggedInDiv.style.display = 'none';
+                accBtnIcon.innerText = "👤";
+                
+                adminCounter.style.display = 'none';
+                stopOnlineCounter();
+            }
+        }
+
+        // LIVE ONLINE COUNTER SIMULATION
+        function startOnlineCounter() {
+            if (onlineIntervalId) return; // Якщо таймер вже запущений — нічого не робимо
+
+            const counterVal = document.getElementById('online-count-val');
+            
+            // Задаємо стартове значення (випадкове число від 120 до 150)
+            let baseOnline = Math.floor(Math.random() * (150 - 120 + 1)) + 120;
+            counterVal.innerText = baseOnline;
+
+            // Кожні 3 секунди змінюємо онлайн на випадкове значення +- 3 користувачі
+            onlineIntervalId = setInterval(() => {
+                const fluctuation = Math.floor(Math.random() * 7) - 3; // Число від -3 до +3
+                baseOnline += fluctuation;
+                
+                // Тримаємо онлайн в розумних межах
+                if (baseOnline < 90) baseOnline = 110;
+                if (baseOnline > 200) baseOnline = 145;
+
+                counterVal.innerText = baseOnline;
+            }, 3000);
+        }
+
+        function stopOnlineCounter() {
+            if (onlineIntervalId) {
+                clearInterval(onlineIntervalId);
+                onlineIntervalId = null;
+            }
+        }
+
+        function saveSearchToHistory(query) {
+            if (!currentUser) return; 
+
+            const historyKey = "padex_history_" + currentUser;
+            let history = JSON.parse(localStorage.getItem(historyKey)) || [];
+            
+            history.unshift({
+                id: Date.now(),
+                query: query,
+                date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+
+            if (history.length > 100) {
+                history.pop();
+            }
+
+            localStorage.setItem(historyKey, JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const listContainer = document.getElementById('history-list');
+            const t = translations[langSelect.value];
+            
+            if (!currentUser) {
+                listContainer.innerHTML = '';
+                return;
+            }
+
+            const historyKey = "padex_history_" + currentUser;
+            const history = JSON.parse(localStorage.getItem(historyKey)) || [];
+
+            if (history.length === 0) {
+                listContainer.innerHTML = `<div style="text-align: center; color: #888; font-style: italic; padding: 10px;">${t.accEmptyHistory}</div>`;
+                return;
+            }
+
+            listContainer.innerHTML = '';
+            history.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'history-item';
+                itemDiv.innerHTML = `
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;" title="${item.query}">
+                        <span style="opacity: 0.5; font-size: 11px; margin-right: 5px;">[${item.date}]</span> ${item.query}
+                    </span>
+                    <button class="delete-hist-btn" onclick="deleteHistoryItem(${item.id})">×</button>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        function deleteHistoryItem(id) {
+            if (!currentUser) return;
+            const historyKey = "padex_history_" + currentUser;
+            let history = JSON.parse(localStorage.getItem(historyKey)) || [];
+            
+            history = history.filter(item => item.id !== id);
+            localStorage.setItem(historyKey, JSON.stringify(history));
+            renderHistory();
+        }
+
+        function clearAllHistory() {
+            if (!currentUser) return;
+            const historyKey = "padex_history_" + currentUser;
+            localStorage.removeItem(historyKey);
+            renderHistory();
+        }
+
+        function handleSearch(event) {
+            if (event.key === 'Enter') {
+                let query = urlInput.value.trim();
+                if (!query) return;
+
+                saveSearchToHistory(query);
+
+                let targetUrl = '';
+                if (query.includes('.') && !query.includes(' ')) {
+                    targetUrl = query.startsWith('http') ? query : 'https://' + query;
+                } else {
+                    const engine = searchEngineSelect.value;
+                    if (engine === 'bing') {
+                        targetUrl = 'https://www.bing.com/search?q=' + encodeURIComponent(query);
+                    } else {
+                        targetUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+                    }
+                }
+
+                window.open(targetUrl, '_blank');
+                urlInput.value = '';
+            }
+        }
+
+        // BXanti Antivirus Logic
+        function startScan() {
+            const urlScan = document.getElementById('scanInput').value.trim();
+            const lang = langSelect.value;
+            const t = translations[lang];
+
+            const domainPattern = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}/;
+            
+            if (!urlScan || !domainPattern.test(urlScan)) {
+                alert(t.bxError);
+                return;
+            }
+
+            const progressContainer = document.getElementById('progressBarContainer');
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('scanStatus');
+
+            progressContainer.style.display = 'block';
+            statusText.style.display = 'block';
+            
+            const theme = themeSelect.value;
+            statusText.style.color = theme === 'light' ? '#555' : '#a3a3a3';
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('warning-bar');
+            
+            let progress = 0;
+            const phrases = [
+                t.bxStatus1,
+                t.bxStatus2 + urlScan + "...",
+                t.bxStatus3,
+                t.bxStatus4
+            ];
+
+            let phraseIndex = 0;
+            statusText.innerHTML = "🔍 " + phrases[0];
+
+            const interval = setInterval(() => {
+                progress += 4;
+                progressBar.style.width = progress + '%';
+
+                if (progress === 24) { phraseIndex = 1; }
+                if (progress === 56) { phraseIndex = 2; }
+                if (progress === 96) { phraseIndex = 3; }
+                
+                statusText.innerHTML = "🔍 " + phrases[phraseIndex] + " (" + progress + "%)";
+
+                if (urlScan.toLowerCase().endsWith('.ru') || urlScan.toLowerCase().includes('.ru/')) {
+                    if (progress >= 48) {
+                        clearInterval(interval);
+                        progressBar.classList.add('warning-bar');
+                        statusText.innerHTML = "❌ <strong>BXanti Warning:</strong> " + urlScan + t.bxRuWarning;
+                        statusText.style.color = "var(--bxanti-warn)";
+                    }
+                    return;
+                }
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    statusText.innerHTML = "✅ <strong>BXanti:</strong> " + urlScan + " " + t.bxStatusSafe;
+                    statusText.style.color = "var(--bxanti-color)";
+                }
+            }, 80);
+        }
+
+        window.onload = initSettings;
+    </script>
+</body>
+</html>
